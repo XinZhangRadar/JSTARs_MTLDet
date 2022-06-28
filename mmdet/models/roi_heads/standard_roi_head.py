@@ -96,6 +96,7 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
             dict[str, Tensor]: a dictionary of loss components
         """
         # assign gts and sample proposals
+        #import pdb;pdb.set_trace()
         if self.with_bbox or self.with_mask:
             num_imgs = len(img_metas)
             if gt_bboxes_ignore is None:

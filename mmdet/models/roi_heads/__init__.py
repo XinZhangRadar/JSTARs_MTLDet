@@ -6,6 +6,8 @@ from .double_roi_head import DoubleHeadRoIHead
 from .dynamic_roi_head import DynamicRoIHead
 from .grid_roi_head import GridRoIHead
 from .htc_roi_head import HybridTaskCascadeRoIHead
+from .htl_roi_head import HybridTaskLearningCascadeRoIHead
+from .htl_instance_roi_head import HybridTaskLearningInstanceCascadeRoIHead
 from .mask_heads import (CoarseMaskHead, FCNMaskHead, FusedSemanticHead,
                          GridHead, HTCMaskHead, MaskIoUHead, MaskPointHead)
 from .mask_scoring_roi_head import MaskScoringRoIHead
@@ -17,7 +19,7 @@ from .standard_roi_head import StandardRoIHead
 
 __all__ = [
     'BaseRoIHead', 'CascadeRoIHead', 'DoubleHeadRoIHead', 'MaskScoringRoIHead',
-    'HybridTaskCascadeRoIHead', 'GridRoIHead', 'ResLayer', 'BBoxHead',
+    'HybridTaskCascadeRoIHead',  'HybridTaskLearningCascadeRoIHead', 'HybridTaskLearningInstanceCascadeRoIHead','GridRoIHead', 'ResLayer', 'BBoxHead',
     'ConvFCBBoxHead', 'Shared2FCBBoxHead', 'StandardRoIHead',
     'Shared4Conv1FCBBoxHead', 'DoubleConvFCBBoxHead', 'FCNMaskHead',
     'HTCMaskHead', 'FusedSemanticHead', 'GridHead', 'MaskIoUHead',

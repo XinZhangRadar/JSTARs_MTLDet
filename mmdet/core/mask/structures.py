@@ -5,8 +5,7 @@ import numpy as np
 import pycocotools.mask as maskUtils
 import torch
 from mmcv.ops.roi_align import roi_align
-
-
+from torch.nn.functional import interpolate
 class BaseInstanceMasks(metaclass=ABCMeta):
     """Base class for instance masks."""
 
@@ -573,3 +572,219 @@ def polygon_to_bitmap(polygons, height, width):
     rle = maskUtils.merge(rles)
     bitmap_mask = maskUtils.decode(rle).astype(np.bool)
     return bitmap_mask
+
+
+
+class ArrayMasks(BaseInstanceMasks):
+
+
+    def __init__(self, masks, height, width):
+        self.height = height
+        self.width = width
+        self.masks = masks
+
+    def __getitem__(self, index):
+        """Index the polygon masks.
+
+        Args:
+            index (ndarray | List): The indices.
+
+        Returns:
+            :obj:`PolygonMasks`: The indexed polygon masks.
+        """
+        if isinstance(index, np.ndarray):
+            index = index.tolist()
+        if isinstance(index, list):
+            masks = [self.masks[i] for i in index]
+        else:
+            try:
+                masks = self.masks[index]
+            except Exception:
+                raise ValueError(
+                    f'Unsupported input of type {type(index)} for indexing!')
+        if isinstance(masks[0], np.ndarray):
+            masks = [masks]  # ensure a list of three levels
+        return PolygonMasks(masks, self.height, self.width)
+
+    def __iter__(self):
+        return iter(self.masks)
+
+    def __repr__(self):
+        s = self.__class__.__name__ + '('
+        s += f'num_masks={len(self.masks)}, '
+        s += f'height={self.height}, '
+        s += f'width={self.width})'
+        return s
+
+    def __len__(self):
+        """Number of masks."""
+        return len(self.masks)
+
+    def rescale(self, scale, interpolation=None):
+        """see :func:`BaseInstanceMasks.rescale`"""
+        new_w, new_h = mmcv.rescale_size((self.width, self.height), scale)
+        if len(self.masks) == 0:
+            rescaled_masks = PolygonMasks([], new_h, new_w)
+        else:
+            rescaled_masks = self.resize((new_h, new_w))
+        return rescaled_masks
+
+    def resize(self, out_shape, interpolation=None):
+        """see :func:`BaseInstanceMasks.resize`"""
+        if len(self.masks) == 0:
+            resized_masks = PolygonMasks([], *out_shape)
+        else:
+            h_scale = out_shape[0] / self.height
+            w_scale = out_shape[1] / self.width
+            resized_masks = []
+            for poly_per_obj in self.masks:
+                resized_poly = []
+                for p in poly_per_obj:
+                    p = p.copy()
+                    p[0::2] *= w_scale
+                    p[1::2] *= h_scale
+                    resized_poly.append(p)
+                resized_masks.append(resized_poly)
+            resized_masks = PolygonMasks(resized_masks, *out_shape)
+        return resized_masks
+
+    def flip(self, flip_direction='horizontal'):
+        """see :func:`BaseInstanceMasks.flip`"""
+        assert flip_direction in ('horizontal', 'vertical', 'diagonal')
+        if len(self.masks) == 0:
+            flipped_masks = PolygonMasks([], self.height, self.width)
+        else:
+            flipped_masks = []
+            for poly_per_obj in self.masks:
+                flipped_poly_per_obj = []
+                for p in poly_per_obj:
+                    p = p.copy()
+                    if flip_direction == 'horizontal':
+                        p[0::2] = self.width - p[0::2]
+                    elif flip_direction == 'vertical':
+                        p[1::2] = self.height - p[1::2]
+                    else:
+                        p[0::2] = self.width - p[0::2]
+                        p[1::2] = self.height - p[1::2]
+                    flipped_poly_per_obj.append(p)
+                flipped_masks.append(flipped_poly_per_obj)
+            flipped_masks = PolygonMasks(flipped_masks, self.height,
+                                         self.width)
+        return flipped_masks
+
+    def crop(self, bbox):
+        """see :func:`BaseInstanceMasks.crop`"""
+        assert isinstance(bbox, np.ndarray)
+        assert bbox.ndim == 1
+
+        # clip the boundary
+        bbox = bbox.copy()
+        bbox[0::2] = np.clip(bbox[0::2], 0, self.width)
+        bbox[1::2] = np.clip(bbox[1::2], 0, self.height)
+        x1, y1, x2, y2 = bbox
+        w = np.maximum(x2 - x1, 1)
+        h = np.maximum(y2 - y1, 1)
+
+        if len(self.masks) == 0:
+            cropped_masks = PolygonMasks([], h, w)
+        else:
+            cropped_masks = []
+            for poly_per_obj in self.masks:
+                cropped_poly_per_obj = []
+                for p in poly_per_obj:
+                    # pycocotools will clip the boundary
+                    p = p.copy()
+                    p[0::2] -= bbox[0]
+                    p[1::2] -= bbox[1]
+                    cropped_poly_per_obj.append(p)
+                cropped_masks.append(cropped_poly_per_obj)
+            cropped_masks = PolygonMasks(cropped_masks, h, w)
+        return cropped_masks
+
+    def pad(self, out_shape, pad_val=0):
+        """padding has no effect on polygons`"""
+        return PolygonMasks(self.masks, *out_shape)
+
+    def expand(self, *args, **kwargs):
+        """TODO: Add expand for polygon"""
+        raise NotImplementedError
+
+
+    def to_bitmap(self):
+        """convert polygon masks to bitmap masks."""
+        bitmap_masks = self.to_ndarray()
+        return BitmapMasks(bitmap_masks, self.height, self.width)
+
+    @property
+    def areas(self):
+        """Compute areas of masks.
+
+        This func is modified from `detectron2
+        <https://github.com/facebookresearch/detectron2/blob/ffff8acc35ea88ad1cb1806ab0f00b4c1c5dbfd9/detectron2/structures/masks.py#L387>`_.
+        The function only works with Polygons using the shoelace formula.
+
+        Return:
+            ndarray: areas of each instance
+        """  # noqa: W501
+        area = []
+        for polygons_per_obj in self.masks:
+            area_per_obj = 0
+            for p in polygons_per_obj:
+                area_per_obj += self._polygon_area(p[0::2], p[1::2])
+            area.append(area_per_obj)
+        return np.asarray(area)
+
+    def _polygon_area(self, x, y):
+        """Compute the area of a component of a polygon.
+
+        Using the shoelace formula:
+        https://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
+
+        Args:
+            x (ndarray): x coordinates of the component
+            y (ndarray): y coordinates of the component
+
+        Return:
+            float: the are of the component
+        """  # noqa: 501
+        return 0.5 * np.abs(
+            np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+    def to_ndarray(self):
+        """Convert masks to the format of ndarray."""
+        #import pdb;pdb.set_trace()
+        if len(self.masks) == 0:
+            return np.empty((0, self.height, self.width), dtype=np.uint8)
+        return torch.stack(self.masks,0).detach().cpu().numpy()
+
+    def to_tensor(self, dtype, device):
+        """See :func:`BaseInstanceMasks.to_tensor`."""
+        if len(self.masks) == 0:
+            return torch.empty((0, self.height, self.width),
+                               dtype=dtype,
+                               device=device)
+        ndarray_masks = self.to_ndarray()
+        return torch.tensor(ndarray_masks, dtype=dtype, device=device)
+
+    def crop_and_resize(self, pos_proposals, mask_size, inds, device='cpu', interpolation='bilinear'):
+        #import pdb;pdb.set_trace()
+        num_pos = pos_proposals.shape[0]
+        mask_targets = []
+
+        _, maxh, maxw = self.masks.shape
+        pos_proposals[:, [0, 2]] = np.clip(pos_proposals[:, [0, 2]], 0, maxw - 1)
+        pos_proposals[:, [1, 3]] = np.clip(pos_proposals[:, [1, 3]], 0, maxh - 1)
+        for i in range(num_pos):
+            gt_mask = self.masks[0]
+            bbox = pos_proposals[i, :].astype(np.int32)
+            x1, y1, x2, y2 = bbox
+            w = np.maximum(x2 - x1 + 1, 1)
+            h = np.maximum(y2 - y1 + 1, 1)
+            # mask is uint8 both before and after resizing
+            # mask_size (h, w) to (w, h)
+
+            target = interpolate(gt_mask[y1:y1 + h, x1:x1 + w].unsqueeze(0).unsqueeze(0),mask_size[::-1]) #mmcv.imresize(gt_mask[y1:y1 + h, x1:x1 + w],mask_size[::-1])
+            mask_targets.append(target.squeeze(0).squeeze(0))
+        return ArrayMasks(mask_targets,*mask_size) #[nums_pos,28,28]
+
+

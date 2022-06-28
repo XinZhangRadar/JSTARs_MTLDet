@@ -308,6 +308,7 @@ def eval_map(det_results,
     num_classes = len(det_results[0])  # positive class num
     area_ranges = ([(rg[0]**2, rg[1]**2) for rg in scale_ranges]
                    if scale_ranges is not None else None)
+    import pdb;pdb.set_trace()
 
     pool = Pool(nproc)
     eval_results = []
@@ -329,6 +330,12 @@ def eval_map(det_results,
         tp, fp = tuple(zip(*tpfp))
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
+        false = []
+        for tt in tp:
+            fa = (tt == 0).sum()
+            false.append(fa)
+
+        false = [(tt == 0).sum() for tt in tp]
         num_gts = np.zeros(num_scales, dtype=int)
         for j, bbox in enumerate(cls_gts):
             if area_ranges is None:
@@ -340,6 +347,7 @@ def eval_map(det_results,
                     num_gts[k] += np.sum((gt_areas >= min_area)
                                          & (gt_areas < max_area))
         # sort all det bboxes by score, also sort tp and fp
+        import pdb;pdb.set_trace()
         cls_dets = np.vstack(cls_dets)
         num_dets = cls_dets.shape[0]
         sort_inds = np.argsort(-cls_dets[:, -1])
@@ -351,6 +359,14 @@ def eval_map(det_results,
         eps = np.finfo(np.float32).eps
         recalls = tp / np.maximum(num_gts[:, np.newaxis], eps)
         precisions = tp / np.maximum((tp + fp), eps)
+        '''
+        print('precisions:'+str(precisions))
+        print('recalls:'+str(recalls))
+        print('gt')
+        print(num_gts)
+        print('tp:'+str(tp))
+        print('fp:'+str(fp))
+        '''
         # calculate AP
         if scale_ranges is None:
             recalls = recalls[0, :]
@@ -446,6 +462,7 @@ def print_map_summary(mean_ap,
         if scale_ranges is not None:
             print_log(f'Scale range {scale_ranges[i]}', logger=logger)
         table_data = [header]
+        #import pdb;pdb.set_trace()
         for j in range(num_classes):
             row_data = [
                 label_names[j], num_gts[i, j], results[j]['num_dets'],

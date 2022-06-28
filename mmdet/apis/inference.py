@@ -12,7 +12,7 @@ from mmdet.core import get_classes
 from mmdet.datasets.pipelines import Compose
 from mmdet.models import build_detector
 
-
+import cv2
 def init_detector(config, checkpoint=None, device='cuda:0'):
     """Initialize a detector from config file.
 
@@ -45,6 +45,7 @@ def init_detector(config, checkpoint=None, device='cuda:0'):
     model.cfg = config  # save the config in the model for convenience
     model.to(device)
     model.eval()
+    print('111111111111111111111111')
     return model
 
 
@@ -87,6 +88,7 @@ def inference_detector(model, img):
         If imgs is a str, a generator will be returned, otherwise return the
         detection results directly.
     """
+    import pdb;pdb.set_trace()
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     # prepare data
@@ -164,7 +166,9 @@ def show_result_pyplot(model, img, result, score_thr=0.3, fig_size=(15, 10)):
     """
     if hasattr(model, 'module'):
         model = model.module
-    img = model.show_result(img, result, score_thr=score_thr, show=False)
+    img = model.show_result(img, result, score_thr=score_thr, show=False,if_text = False)
+    cv2.imwrite('prediction.jpg',img)
+    import pdb;pdb.set_trace()
     plt.figure(figsize=fig_size)
     plt.imshow(mmcv.bgr2rgb(img))
     plt.show()

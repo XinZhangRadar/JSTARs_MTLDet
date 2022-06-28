@@ -23,6 +23,7 @@ class GroupSampler(Sampler):
     def __iter__(self):
         indices = []
         for i, size in enumerate(self.group_sizes):
+            #print('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1')
             if size == 0:
                 continue
             indice = np.where(self.flag == i)[0]
@@ -33,12 +34,19 @@ class GroupSampler(Sampler):
             indice = np.concatenate(
                 [indice, np.random.choice(indice, num_extra)])
             indices.append(indice)
+        #print(indices)
+        #print('1wwwwwwwwwwwwwwwwwwwww')
+        #print(indices)
+        #print(indices)
+        #print(indices)
+        #print(indices)
         indices = np.concatenate(indices)
         indices = [
             indices[i * self.samples_per_gpu:(i + 1) * self.samples_per_gpu]
             for i in np.random.permutation(
                 range(len(indices) // self.samples_per_gpu))
         ]
+
         indices = np.concatenate(indices)
         indices = indices.astype(np.int64).tolist()
         assert len(indices) == self.num_samples

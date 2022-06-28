@@ -54,18 +54,22 @@ class SmoothL1Loss(nn.Module):
         loss_weight (float, optional): The weight of loss.
     """
 
-    def __init__(self, beta=1.0, reduction='mean', loss_weight=1.0):
+    def __init__(self, beta=1.0, reduction='mean', branch = None,loss_weight=1.0):
         super(SmoothL1Loss, self).__init__()
         self.beta = beta
         self.reduction = reduction
         self.loss_weight = loss_weight
-
+        self.branch = branch
+        if self.loss_weight == 'auto' or self.loss_weight == 'auto2' :
+            params = torch.ones(1, requires_grad=True)
+            self.Auto_loss_weight = torch.nn.Parameter(params)
     def forward(self,
                 pred,
                 target,
                 weight=None,
                 avg_factor=None,
                 reduction_override=None,
+                branch=None,
                 **kwargs):
         """Forward function.
 
@@ -83,7 +87,8 @@ class SmoothL1Loss(nn.Module):
         assert reduction_override in (None, 'none', 'mean', 'sum')
         reduction = (
             reduction_override if reduction_override else self.reduction)
-        loss_bbox = self.loss_weight * smooth_l1_loss(
+
+        loss_bbox = smooth_l1_loss(
             pred,
             target,
             weight,
@@ -91,7 +96,19 @@ class SmoothL1Loss(nn.Module):
             reduction=reduction,
             avg_factor=avg_factor,
             **kwargs)
-        return loss_bbox
+        
+        if self.loss_weight == 'auto':
+            print(self.branch)
+            print(0.5 / (self.Auto_loss_weight ** 2))
+            return 0.5 / (self.Auto_loss_weight ** 2) * loss_bbox + torch.log(self.Auto_loss_weight)
+        elif self.loss_weight == 'auto2':
+            print(self.branch)
+            print(0.5 / (self.Auto_loss_weight ** 2))
+            return 0.5 / (self.Auto_loss_weight ** 2) * loss_bbox + torch.log(1+ self.Auto_loss_weight ** 2)
+        else:
+            loss_bbox = self.loss_weight * loss_bbox
+            #print(loss_bbox)
+            return loss_bbox
 
 
 @LOSSES.register_module()

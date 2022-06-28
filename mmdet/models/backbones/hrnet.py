@@ -401,6 +401,7 @@ class HRNet(nn.Module):
         return nn.ModuleList(transition_layers)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1):
+        import pdb;pdb.set_trace()
         downsample = None
         if stride != 1 or inplanes != planes * block.expansion:
             downsample = nn.Sequential(

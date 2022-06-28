@@ -14,6 +14,8 @@ def main():
         '--score-thr', type=float, default=0.3, help='bbox score threshold')
     args = parser.parse_args()
 
+    import pdb;pdb.set_trace()
+
     # build the model from a config file and a checkpoint file
     model = init_detector(args.config, args.checkpoint, device=args.device)
     # test a single image

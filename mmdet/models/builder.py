@@ -54,6 +54,7 @@ def build_shared_head(cfg):
 
 def build_head(cfg):
     """Build head."""
+    #import pdb;pdb.set_trace()
     return build(cfg, HEADS)
 
 
@@ -64,4 +65,5 @@ def build_loss(cfg):
 
 def build_detector(cfg, train_cfg=None, test_cfg=None):
     """Build detector."""
+    #import pdb;pdb.set_trace()
     return build(cfg, DETECTORS, dict(train_cfg=train_cfg, test_cfg=test_cfg))

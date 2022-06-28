@@ -4,14 +4,16 @@ import mmcv
 def wider_face_classes():
     return ['face']
 
-
+'''
 def voc_classes():
     return [
         'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat',
         'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',
         'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
     ]
-
+'''
+def voc_classes():
+    return ['building',]
 
 def imagenet_det_classes():
     return [
@@ -63,7 +65,7 @@ def imagenet_vid_classes():
         'watercraft', 'whale', 'zebra'
     ]
 
-
+'''
 def coco_classes():
     return [
         'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
@@ -81,7 +83,9 @@ def coco_classes():
         'scissors', 'teddy_bear', 'hair_drier', 'toothbrush'
     ]
 
-
+'''
+def coco_classes():
+    return ['ship',]
 def cityscapes_classes():
     return [
         'person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle',

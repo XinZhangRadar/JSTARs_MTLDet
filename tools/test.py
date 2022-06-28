@@ -15,7 +15,7 @@ from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.models import build_detector
 
-
+import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
@@ -174,6 +174,11 @@ def main():
 
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
+        #import pdb;pdb.set_trace()
+        #outputs = pd.read_pickle('result_new.pkl')
+
+
+
         outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,
                                   args.show_score_thr)
     else:
@@ -198,6 +203,7 @@ def main():
             for key in ['interval', 'tmpdir', 'start', 'gpu_collect']:
                 eval_kwargs.pop(key, None)
             eval_kwargs.update(dict(metric=args.eval, **kwargs))
+            import pdb;pdb.set_trace()
             print(dataset.evaluate(outputs, **eval_kwargs))
 
 

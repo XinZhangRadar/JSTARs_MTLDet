@@ -126,6 +126,7 @@ class FCNMaskHead(nn.Module):
         return mask_pred
 
     def get_targets(self, sampling_results, gt_masks, rcnn_train_cfg):
+        #import pdb;pdb.set_trace()
         pos_proposals = [res.pos_bboxes for res in sampling_results]
         pos_assigned_gt_inds = [
             res.pos_assigned_gt_inds for res in sampling_results
@@ -136,6 +137,7 @@ class FCNMaskHead(nn.Module):
 
     @force_fp32(apply_to=('mask_pred', ))
     def loss(self, mask_pred, mask_targets, labels):
+        #import pdb;pdb.set_trace()
         loss = dict()
         if mask_pred.size(0) == 0:
             loss_mask = mask_pred.sum() * 0

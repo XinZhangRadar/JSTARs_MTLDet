@@ -195,6 +195,7 @@ class Resize(object):
                     results['scale'],
                     return_scale=True,
                     backend=self.backend)
+                #print(img.shape)
                 # the w_scale and h_scale has minor difference
                 # a real fix should be done in the mmcv.imrescale in the future
                 new_h, new_w = img.shape[:2]
@@ -282,6 +283,7 @@ class Resize(object):
         self._resize_bboxes(results)
         self._resize_masks(results)
         self._resize_seg(results)
+        results['if_scale'] = True
         return results
 
     def __repr__(self):
@@ -301,61 +303,18 @@ class RandomFlip(object):
     otherwise it will be randomly decided by a ratio specified in the init
     method.
 
-    When random flip is enabled, ``flip_ratio``/``direction`` can either be a
-    float/string or tuple of float/string. There are 3 flip modes:
-
-    - ``flip_ratio`` is float, ``direction`` is string: the image will be
-        ``direction``ly flipped with probability of ``flip_ratio`` .
-        E.g., ``flip_ratio=0.5``, ``direction='horizontal'``,
-        then image will be horizontally flipped with probability of 0.5.
-    - ``flip_ratio`` is float, ``direction`` is list of string: the image wil
-        be ``direction[i]``ly flipped with probability of
-        ``flip_ratio/len(direction)``.
-        E.g., ``flip_ratio=0.5``, ``direction=['horizontal', 'vertical']``,
-        then image will be horizontally flipped with probability of 0.25,
-        vertically with probability of 0.25.
-    - ``flip_ratio`` is list of float, ``direction`` is list of string:
-        given ``len(flip_ratio) == len(direction)``, the image wil
-        be ``direction[i]``ly flipped with probability of ``flip_ratio[i]``.
-        E.g., ``flip_ratio=[0.3, 0.5]``, ``direction=['horizontal',
-        'vertical']``, then image will be horizontally flipped with probability
-         of 0.3, vertically with probability of 0.5
-
     Args:
-        flip_ratio (float | list[float], optional): The flipping probability.
-            Default: None.
-        direction(str | list[str], optional): The flipping direction. Options
-            are 'horizontal', 'vertical', 'diagonal'. Default: 'horizontal'.
-            If input is a list, the length must equal ``flip_ratio``. Each
-            element in ``flip_ratio`` indicates the flip probability of
-            corresponding direction.
+        flip_ratio (float, optional): The flipping probability. Default: None.
+        direction(str, optional): The flipping direction. Options are
+            'horizontal' and 'vertical'. Default: 'horizontal'.
     """
 
     def __init__(self, flip_ratio=None, direction='horizontal'):
-        if isinstance(flip_ratio, list):
-            assert mmcv.is_list_of(flip_ratio, float)
-            assert 0 <= sum(flip_ratio) <= 1
-        elif isinstance(flip_ratio, float):
-            assert 0 <= flip_ratio <= 1
-        elif flip_ratio is None:
-            pass
-        else:
-            raise ValueError('flip_ratios must be None, float, '
-                             'or list of float')
         self.flip_ratio = flip_ratio
-
-        valid_directions = ['horizontal', 'vertical', 'diagonal']
-        if isinstance(direction, str):
-            assert direction in valid_directions
-        elif isinstance(direction, list):
-            assert mmcv.is_list_of(direction, str)
-            assert set(direction).issubset(set(valid_directions))
-        else:
-            raise ValueError('direction must be either str or list of str')
         self.direction = direction
-
-        if isinstance(flip_ratio, list):
-            assert len(self.flip_ratio) == len(self.direction)
+        if flip_ratio is not None:
+            assert flip_ratio >= 0 and flip_ratio <= 1
+        assert direction in ['horizontal', 'vertical']
 
     def bbox_flip(self, bboxes, img_shape, direction):
         """Flip bboxes horizontally.
@@ -380,13 +339,6 @@ class RandomFlip(object):
             h = img_shape[0]
             flipped[..., 1::4] = h - bboxes[..., 3::4]
             flipped[..., 3::4] = h - bboxes[..., 1::4]
-        elif direction == 'diagonal':
-            w = img_shape[1]
-            h = img_shape[0]
-            flipped[..., 0::4] = w - bboxes[..., 2::4]
-            flipped[..., 1::4] = h - bboxes[..., 3::4]
-            flipped[..., 2::4] = w - bboxes[..., 0::4]
-            flipped[..., 3::4] = h - bboxes[..., 1::4]
         else:
             raise ValueError(f"Invalid flipping direction '{direction}'")
         return flipped
@@ -404,31 +356,14 @@ class RandomFlip(object):
         """
 
         if 'flip' not in results:
-            if isinstance(self.direction, list):
-                # None means non-flip
-                direction_list = self.direction + [None]
-            else:
-                # None means non-flip
-                direction_list = [self.direction, None]
-
-            if isinstance(self.flip_ratio, list):
-                non_flip_ratio = 1 - sum(self.flip_ratio)
-                flip_ratio_list = self.flip_ratio + [non_flip_ratio]
-            else:
-                non_flip_ratio = 1 - self.flip_ratio
-                # exclude non-flip
-                single_ratio = self.flip_ratio / (len(direction_list) - 1)
-                flip_ratio_list = [single_ratio] * (len(direction_list) -
-                                                    1) + [non_flip_ratio]
-
-            cur_dir = np.random.choice(direction_list, p=flip_ratio_list)
-
-            results['flip'] = cur_dir is not None
+            flip = True if np.random.rand() < self.flip_ratio else False
+            results['flip'] = flip
         if 'flip_direction' not in results:
-            results['flip_direction'] = cur_dir
+            results['flip_direction'] = self.direction
         if results['flip']:
             # flip image
             for key in results.get('img_fields', ['img']):
+                #print(key)
                 results[key] = mmcv.imflip(
                     results[key], direction=results['flip_direction'])
             # flip bboxes
@@ -444,6 +379,8 @@ class RandomFlip(object):
             for key in results.get('seg_fields', []):
                 results[key] = mmcv.imflip(
                     results[key], direction=results['flip_direction'])
+        for key in results.get('img_fields', ['img']):
+            results['after_flip_img'] = results[key]
         return results
 
     def __repr__(self):
@@ -474,14 +411,23 @@ class Pad(object):
 
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
+        #print(results.get('img_fields', ['img']))
         for key in results.get('img_fields', ['img']):
             if self.size is not None:
                 padded_img = mmcv.impad(
                     results[key], shape=self.size, pad_val=self.pad_val)
+                padded_ori_img = mmcv.impad(
+                    results['after_flip_img'], shape=self.size, pad_val=self.pad_val)
             elif self.size_divisor is not None:
                 padded_img = mmcv.impad_to_multiple(
                     results[key], self.size_divisor, pad_val=self.pad_val)
+                #import pdb;pdb.set_trace()
+                #print(results['after_flip_img'].shape)
+                padded_ori_img = mmcv.impad_to_multiple(
+                    results['after_flip_img'], self.size_divisor, pad_val=self.pad_val)
             results[key] = padded_img
+            results['after_flip_img'] = padded_ori_img
+            #import cv2;cv2.imwrite('/home/zhangxin/ff.jpg',padded_ori_img)
         results['pad_shape'] = padded_img.shape
         results['pad_fixed_size'] = self.size
         results['pad_size_divisor'] = self.size_divisor
@@ -508,9 +454,11 @@ class Pad(object):
         Returns:
             dict: Updated result dict.
         """
+
         self._pad_img(results)
         self._pad_masks(results)
         self._pad_seg(results)
+        results['if_pad'] = True
         return results
 
     def __repr__(self):

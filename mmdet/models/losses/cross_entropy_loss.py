@@ -132,6 +132,7 @@ class CrossEntropyLoss(nn.Module):
                  use_sigmoid=False,
                  use_mask=False,
                  reduction='mean',
+                 branch=None,
                  class_weight=None,
                  loss_weight=1.0):
         """CrossEntropyLoss.
@@ -161,7 +162,10 @@ class CrossEntropyLoss(nn.Module):
             self.cls_criterion = mask_cross_entropy
         else:
             self.cls_criterion = cross_entropy
-
+        self.branch = branch
+        if self.loss_weight == 'auto' or self.loss_weight == 'auto2' :
+            params = torch.ones(1, requires_grad=True)
+            self.Auto_loss_weight = torch.nn.Parameter(params)
     def forward(self,
                 cls_score,
                 label,
@@ -189,7 +193,7 @@ class CrossEntropyLoss(nn.Module):
             class_weight = cls_score.new_tensor(self.class_weight)
         else:
             class_weight = None
-        loss_cls = self.loss_weight * self.cls_criterion(
+        loss_cls = self.cls_criterion(
             cls_score,
             label,
             weight,
@@ -197,4 +201,15 @@ class CrossEntropyLoss(nn.Module):
             reduction=reduction,
             avg_factor=avg_factor,
             **kwargs)
+        if self.loss_weight == 'auto':
+            print(self.branch)
+            print(0.5 / (self.Auto_loss_weight ** 2))
+            return 0.5 / (self.Auto_loss_weight ** 2) * loss_cls + torch.log(self.Auto_loss_weight)
+        elif self.loss_weight == 'auto2':
+            print(self.branch)
+            print(0.5 / (self.Auto_loss_weight ** 2))
+            return 0.5 / (self.Auto_loss_weight ** 2) * loss_cls + torch.log(1+ self.Auto_loss_weight ** 2)
+        else:
+            loss_cls = self.loss_weight * loss_cls
+        #print(loss_cls)
         return loss_cls

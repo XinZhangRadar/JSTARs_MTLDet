@@ -1,4 +1,5 @@
-_base_ = '../cascade_rcnn/cascade_rcnn_r50_fpn_1x_coco.py'
+#_base_ = '../cascade_rcnn/cascade_rcnn_r50_fpn_1x_coco.py'
+_base_ = '../cascade_rcnn/cascade_rcnn_r101_fpn_1x_coco.py'
 model = dict(
     pretrained='open-mmlab://msra/hrnetv2_w32',
     backbone=dict(

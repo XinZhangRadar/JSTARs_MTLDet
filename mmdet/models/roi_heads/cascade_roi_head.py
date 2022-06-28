@@ -139,6 +139,7 @@ class CascadeRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
 
     def _bbox_forward(self, stage, x, rois):
         """Box head forward function used in both training and testing."""
+        
         bbox_roi_extractor = self.bbox_roi_extractor[stage]
         bbox_head = self.bbox_head[stage]
         bbox_feats = bbox_roi_extractor(x[:bbox_roi_extractor.num_inputs],
@@ -160,6 +161,8 @@ class CascadeRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
         loss_bbox = self.bbox_head[stage].loss(bbox_results['cls_score'],
                                                bbox_results['bbox_pred'], rois,
                                                *bbox_targets)
+
+
 
         bbox_results.update(
             loss_bbox=loss_bbox, rois=rois, bbox_targets=bbox_targets)
@@ -290,6 +293,7 @@ class CascadeRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                     proposal_list = self.bbox_head[i].refine_bboxes(
                         bbox_results['rois'], roi_labels,
                         bbox_results['bbox_pred'], pos_is_gts, img_metas)
+      
 
         return losses
 

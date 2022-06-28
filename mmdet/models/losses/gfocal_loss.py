@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 from ..builder import LOSSES
 from .utils import weighted_loss
-
+import pdb
 
 @weighted_loss
 def quality_focal_loss(pred, target, beta=2.0):
@@ -23,6 +23,7 @@ def quality_focal_loss(pred, target, beta=2.0):
     Returns:
         torch.Tensor: Loss tensor with shape (N,).
     """
+    pdb.set_trace()
     assert len(target) == 2, """target for QFL must be a tuple of two elements,
         including category label and quality label, respectively"""
     # label denotes the category id, score denotes the quality score
@@ -123,6 +124,7 @@ class QualityFocalLoss(nn.Module):
                 override the original reduction method of the loss.
                 Defaults to None.
         """
+        pdb.set_trace()
         assert reduction_override in (None, 'none', 'mean', 'sum')
         reduction = (
             reduction_override if reduction_override else self.reduction)

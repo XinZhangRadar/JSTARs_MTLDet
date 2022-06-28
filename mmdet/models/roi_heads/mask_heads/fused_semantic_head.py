@@ -101,6 +101,7 @@ class FusedSemanticHead(nn.Module):
 
     @force_fp32(apply_to=('mask_pred', ))
     def loss(self, mask_pred, labels):
+        #import pdb;pdb.set_trace()
         labels = labels.squeeze(1).long()
         loss_semantic_seg = self.criterion(mask_pred, labels)
         loss_semantic_seg *= self.loss_weight

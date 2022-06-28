@@ -9,7 +9,7 @@ class DoubleHeadRoIHead(StandardRoIHead):
     https://arxiv.org/abs/1904.06493
     """
 
-    def __init__(self, reg_roi_scale_factor, **kwargs):
+    def __init__(self, reg_roi_scale_factor=1.3, **kwargs):
         super(DoubleHeadRoIHead, self).__init__(**kwargs)
         self.reg_roi_scale_factor = reg_roi_scale_factor
 

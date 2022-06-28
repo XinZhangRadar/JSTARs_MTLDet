@@ -251,7 +251,9 @@ class HybridTaskCascadeRoIHead(CascadeRoIHead):
         # semantic segmentation part
         # 2 outputs: segmentation prediction and embedded features
         losses = dict()
+        #import pdb;pdb.set_trace()
         if self.with_semantic:
+
             semantic_pred, semantic_feat = self.semantic_head(x)
             loss_seg = self.semantic_head.loss(semantic_pred, gt_semantic_seg)
             losses['loss_semantic_seg'] = loss_seg

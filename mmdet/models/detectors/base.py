@@ -265,7 +265,8 @@ class BaseDetector(nn.Module, metaclass=ABCMeta):
                     win_name='',
                     show=False,
                     wait_time=0,
-                    out_file=None):
+                    out_file=None,
+                    if_text = True):
         """Draw `result` over `img`.
 
         Args:
@@ -321,6 +322,7 @@ class BaseDetector(nn.Module, metaclass=ABCMeta):
         if out_file is not None:
             show = False
         # draw bounding boxes
+        #import pdb;pdb.set_trace()
         mmcv.imshow_det_bboxes(
             img,
             bboxes,
@@ -334,7 +336,8 @@ class BaseDetector(nn.Module, metaclass=ABCMeta):
             win_name=win_name,
             show=show,
             wait_time=wait_time,
-            out_file=out_file)
+            out_file=out_file,
+            if_text = if_text)
 
         if not (show or out_file):
             return img

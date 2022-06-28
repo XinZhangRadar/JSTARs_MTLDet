@@ -22,6 +22,7 @@ class XMLDataset(CustomDataset):
     def __init__(self, min_size=None, **kwargs):
         super(XMLDataset, self).__init__(**kwargs)
         self.cat2label = {cat: i for i, cat in enumerate(self.CLASSES)}
+        #print(self.cat2label)
         self.min_size = min_size
 
     def load_annotations(self, ann_file):
@@ -33,6 +34,7 @@ class XMLDataset(CustomDataset):
         Returns:
             list[dict]: Annotation info from XML file.
         """
+        #import pdb;pdb.set_trace()
 
         data_infos = []
         img_ids = mmcv.list_from_file(ann_file)
@@ -40,7 +42,10 @@ class XMLDataset(CustomDataset):
             filename = f'JPEGImages/{img_id}.jpg'
             xml_path = osp.join(self.img_prefix, 'Annotations',
                                 f'{img_id}.xml')
-            tree = ET.parse(xml_path)
+            try:
+                tree = ET.parse(xml_path)
+            except:
+                continue
             root = tree.getroot()
             size = root.find('size')
             width = 0
@@ -84,6 +89,7 @@ class XMLDataset(CustomDataset):
         Returns:
             dict: Annotation info of specified index.
         """
+        #import pdb;pdb.set_trace()
 
         img_id = self.data_infos[idx]['id']
         xml_path = osp.join(self.img_prefix, 'Annotations', f'{img_id}.xml')
@@ -94,11 +100,15 @@ class XMLDataset(CustomDataset):
         bboxes_ignore = []
         labels_ignore = []
         for obj in root.findall('object'):
-            name = obj.find('name').text
+            try:
+                name = obj.find('name').text
+            except:
+                continue
             if name not in self.CLASSES:
                 continue
             label = self.cat2label[name]
-            difficult = int(obj.find('difficult').text)
+            #difficult = int(obj.find('difficult').text)
+            difficult = 0
             bnd_box = obj.find('bndbox')
             # TODO: check whether it is necessary to use int
             # Coordinates may be float type
@@ -108,6 +118,14 @@ class XMLDataset(CustomDataset):
                 int(float(bnd_box.find('xmax').text)),
                 int(float(bnd_box.find('ymax').text))
             ]
+            for i in range(4):            
+                if bbox[i]>2:
+                    bbox[i] -=1
+                if bbox[i] == 0:
+                    bbox[i] =1
+
+
+
             ignore = False
             if self.min_size:
                 assert not self.test_mode
@@ -125,7 +143,7 @@ class XMLDataset(CustomDataset):
             bboxes = np.zeros((0, 4))
             labels = np.zeros((0, ))
         else:
-            bboxes = np.array(bboxes, ndmin=2) - 1
+            bboxes = np.array(bboxes, ndmin=2) #- 1
             labels = np.array(labels)
         if not bboxes_ignore:
             bboxes_ignore = np.zeros((0, 4))

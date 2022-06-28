@@ -78,6 +78,7 @@ class HRFPN(nn.Module):
 
     def forward(self, inputs):
         """Forward function."""
+        #import pdb;pdb.set_trace()
         assert len(inputs) == self.num_ins
         outs = [inputs[0]]
         for i in range(1, self.num_ins):

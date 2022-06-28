@@ -24,7 +24,7 @@ class TwoStageDetector(BaseDetector):
                  pretrained=None):
         super(TwoStageDetector, self).__init__()
         self.backbone = build_backbone(backbone)
-
+        #import pdb;pdb.set_trace()
         if neck is not None:
             self.neck = build_neck(neck)
 
@@ -37,9 +37,11 @@ class TwoStageDetector(BaseDetector):
         if roi_head is not None:
             # update train and test cfg here for now
             # TODO: refactor assigner & sampler
+            
             rcnn_train_cfg = train_cfg.rcnn if train_cfg is not None else None
             roi_head.update(train_cfg=rcnn_train_cfg)
             roi_head.update(test_cfg=test_cfg.rcnn)
+
             self.roi_head = build_head(roi_head)
 
         self.train_cfg = train_cfg
@@ -79,6 +81,9 @@ class TwoStageDetector(BaseDetector):
 
     def extract_feat(self, img):
         """Directly extract features from the backbone+neck."""
+        #import pdb;pdb.set_trace()
+        
+
         x = self.backbone(img)
         if self.with_neck:
             x = self.neck(x)
@@ -139,7 +144,10 @@ class TwoStageDetector(BaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
+        #import pdb;pdb.set_trace()
         x = self.extract_feat(img)
+        
+
 
         losses = dict()
 
@@ -163,6 +171,7 @@ class TwoStageDetector(BaseDetector):
                                                  gt_bboxes_ignore, gt_masks,
                                                  **kwargs)
         losses.update(roi_losses)
+
 
         return losses
 
@@ -189,6 +198,7 @@ class TwoStageDetector(BaseDetector):
         assert self.with_bbox, 'Bbox head must be implemented.'
 
         x = self.extract_feat(img)
+        import pdb;pdb.set_trace()
 
         if proposals is None:
             proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)

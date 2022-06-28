@@ -198,6 +198,7 @@ class DefaultFormatBundle(object):
             dict: The result dict contains the data that is formatted with \
                 default bundle.
         """
+        
 
         if 'img' in results:
             img = results['img']
@@ -216,6 +217,12 @@ class DefaultFormatBundle(object):
         if 'gt_semantic_seg' in results:
             results['gt_semantic_seg'] = DC(
                 to_tensor(results['gt_semantic_seg'][None, ...]), stack=True)
+
+
+        if 'gt_den' in results:
+            results['gt_den'] = DC(to_tensor(results['gt_den'][None, ...]), stack=True)
+        if 'gt_edge' in results:
+            results['gt_edge'] = DC(to_tensor(results['gt_edge'][None, ...]), stack=True)
         return results
 
     def _add_default_meta_keys(self, results):
@@ -315,6 +322,7 @@ class Collect(object):
             img_meta[key] = results[key]
         data['img_metas'] = DC(img_meta, cpu_only=True)
         for key in self.keys:
+            #print(key)
             data[key] = results[key]
         return data
 
