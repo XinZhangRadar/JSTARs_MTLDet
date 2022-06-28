@@ -116,7 +116,7 @@ data
 *.log.json
 docs/modelzoo_statistics.md
 mmdet/.mim
-work_dirs/
+#work_dirs/
 
 # Pytorch
 *.pth
