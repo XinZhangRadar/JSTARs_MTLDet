@@ -33,6 +33,16 @@ Put the model to ***work_dirs/HTL_1x_renext/***
 Put the model to ***work_dirs/HTL_1x_faster/***
 
 
+## Evaluate
+1.Multi-GPUs Test
+```shell
+./tools/dist_test.sh work_dirs/HTL_1x_faster/HTL_ins_faster_rcnn_r50_fpn_1x_hrsid.py work_dirs/HTL_1x_faster/epoch_11.pth 8 --eval mAP
+```
+2.Single-GPUs Test
+```shell
+python tools/test.py work_dirs/HTL_1x_faster/HTL_ins_faster_rcnn_r50_fpn_1x_hrsid.py work_dirs/HTL_1x_faster/epoch_11.pth --eval mAP
+```
+
 ## Citation
 
 ```
