@@ -6,7 +6,7 @@ Xin Zhang , Chunlei Huo , Nuo Xu , Hangzhi Jiang, Yong Cao, Lei Ni and Chunhong 
 
 ## Installation
 
-Please refer to [install.md](docs/install.md) for installation and dataset preparation.
+Please refer to [install.md](docs/install.md) for installation.
 
 
 ## Getting Started
