@@ -47,13 +47,13 @@ python tools/test.py work_dirs/HTL_1x_faster/HTL_ins_faster_rcnn_r50_fpn_1x_hrsi
 ## Citation
 
 ```
-@article{zhang2024ship,
-  title={Ship-Go: SAR Ship Images Inpainting via instance-to-image Generative Diffusion Models},
-  author={Zhang, Xin and Li, Yang and Li, Feng and Jiang, Hangzhi and Wang, Yanhua and Zhang, Liang and Zheng, Le and Ding, Zegang},
-  journal={ISPRS Journal of Photogrammetry and Remote Sensing},
-  volume={207},
-  pages={203--217},
-  year={2024},
-  publisher={Elsevier}
+@article{zhang2021multitask,
+  title={Multitask learning for ship detection from synthetic aperture radar images},
+  author={Zhang, Xin and Huo, Chunlei and Xu, Nuo and Jiang, Hangzhi and Cao, Yong and Ni, Lei and Pan, Chunhong},
+  journal={IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing},
+  volume={14},
+  pages={8048--8062},
+  year={2021},
+  publisher={IEEE}
 }
 ```
